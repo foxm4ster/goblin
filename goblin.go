@@ -42,10 +42,10 @@ func New(opts ...Option) Goblin {
 }
 
 func (g Goblin) Awaken() error {
-	parentCtx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	parent, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	group, ctx := errgroup.WithContext(parentCtx)
+	group, ctx := errgroup.WithContext(parent)
 
 	for _, d := range g.horde {
 		group.Go(tinker(ctx, g.scrawler, d))

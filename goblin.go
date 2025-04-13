@@ -64,7 +64,7 @@ func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
 		defer close(ch)
 
 		go func() {
-			scrawl(slog.LevelInfo, "running service", slog.String("name", daemon.Name()))
+			scrawl(slog.LevelInfo, "tinkering with ...", slog.String("name", daemon.Name()))
 
 			if err := daemon.Serve(); err != nil {
 				ch <- err
@@ -75,7 +75,7 @@ func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
 		case err := <-ch:
 			scrawl(
 				slog.LevelError,
-				"failed to run service",
+				"goblin couldn’t handle a daemon — it backfired!",
 				slog.String("name", daemon.Name()),
 				slog.String("cause", err.Error()),
 			)
@@ -84,14 +84,14 @@ func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
 			if err := daemon.Shutdown(); err != nil {
 				scrawl(
 					slog.LevelError,
-					"failed to stop service",
+					"goblin couldn’t silence the daemon — it fought back!",
 					slog.String("name", daemon.Name()),
 					slog.String("cause", err.Error()),
 				)
 				return err
 			}
 
-			scrawl(slog.LevelInfo, "service is stopping", slog.String("name", daemon.Name()))
+			scrawl(slog.LevelInfo, "goblin tamed the daemon — it’s now resting!", slog.String("name", daemon.Name()))
 			return nil
 		}
 	}

@@ -4,13 +4,6 @@ import (
 	"log/slog"
 )
 
-type Config struct {
-	book  *slog.Logger
-	horde []Daemon
-}
-
-type Option func(*Config)
-
 func WithDaemon(horde ...Daemon) func(*Config) {
 	return func(c *Config) {
 		c.horde = horde

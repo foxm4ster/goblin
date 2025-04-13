@@ -34,9 +34,12 @@ type Daemon interface {
 // Define a daemon
 myDaemon := &MyDaemon{}
 
+// Define another daemon
+srv := NewHTTPServer(addr, handler)
+
 gob := goblin.New(
     goblin.WithLogbook(logger),
-    goblin.WithDaemon(myDaemon),
+    goblin.WithDaemon(myDaemon, srv),
 )
 
 if err := gob.Awaken(); err != nil {

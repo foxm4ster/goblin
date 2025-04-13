@@ -26,3 +26,25 @@ type Daemon interface {
     Shutdown() error
 }
 ```
+
+### Example Usage
+
+```go
+
+// Define a daemon
+myDaemon := &MyDaemon{}
+
+gob := goblin.New(
+    goblin.WithLogbook(logger),
+    goblin.WithDaemon(myDaemon),
+)
+
+if err := gob.Awaken(); err != nil {
+    logger.Error("goblin couldn’t tame the daemons", "cause", err)
+}
+```
+
+
+### License
+
+Licensed under the MIT License. See LICENSE for more.

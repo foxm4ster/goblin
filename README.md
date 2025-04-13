@@ -47,4 +47,4 @@ if err := gob.Awaken(); err != nil {
 
 ### License
 
-Licensed under the MIT License. See LICENSE for more.
+Licensed under the MIT License. See [LICENSE](./LICENSE) for more.

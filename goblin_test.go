@@ -265,6 +265,77 @@ func TestGoblin_Awaken(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "shutdown with error",
+			f: func(t *testing.T) {
+				buff := &bytes.Buffer{}
+
+				logger := slog.New(slog.NewJSONHandler(buff, nil))
+
+				srv := Server{
+					addr:    addr,
+					timeout: time.Second,
+					http: &http.Server{
+						Addr: addr,
+						Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							time.Sleep(time.Second * 2)
+							_, _ = fmt.Fprintf(w, keyWord)
+						}),
+						ReadTimeout:       time.Second * 10,
+						ReadHeaderTimeout: time.Second * 10,
+						WriteTimeout:      time.Second * 10,
+						IdleTimeout:       time.Second * 10,
+					},
+				}
+
+				first, second := make(chan struct{}), make(chan struct{})
+
+				go func() {
+					<-first
+					go func() {
+						second <- struct{}{}
+					}()
+
+					res, err := http.Get(host)
+					if err != nil {
+						t.Errorf("failed to send first request: %v", err)
+					}
+
+					data, err := io.ReadAll(res.Body)
+					if err != nil {
+						t.Errorf("failed to parse reposne: %v", err)
+					}
+
+					if string(data) != keyWord {
+						t.Errorf("unexpected key word: got %v", string(data))
+					}
+				}()
+
+				go func() {
+					<-second
+					time.Sleep(time.Second)
+					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+				}()
+
+				go func() {
+					first <- struct{}{}
+				}()
+
+				gob := goblin.New(
+					goblin.WithLogbook(logger),
+					goblin.WithDaemon(srv),
+				)
+
+				err := gob.Awaken()
+				if err == nil {
+					t.Error("goblin aweken expects error got nil")
+				}
+
+				if !errors.Is(err, context.DeadlineExceeded) {
+					t.Errorf("goblin expected context deadline exceeded, got: %v", err)
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {

@@ -1,5 +1,7 @@
 # Goblin: The Daemon Tamer 🧙‍♂️👹
 
+![Goblin logo](https://github.com/user-attachments/assets/4cc9f068-9f31-424e-a353-2f0c645f48c8)
+
 Welcome to **Goblin**, a mischievous Go library for managing daemons like a true goblin would — with magic, chaos, and just a touch of mayhem. 🧙‍♂️✨
 
 ## Features

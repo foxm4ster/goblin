@@ -42,10 +42,18 @@ func New(opts ...Option) Goblin {
 }
 
 func (g Goblin) Awaken() error {
-	parent, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	return g.awaken(context.Background())
+}
+
+func (g Goblin) AwakenContext(ctx context.Context) error {
+	return g.awaken(ctx)
+}
+
+func (g Goblin) awaken(parent context.Context) error {
+	notifyCtx, cancel := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	group, ctx := errgroup.WithContext(parent)
+	group, ctx := errgroup.WithContext(notifyCtx)
 
 	for _, d := range g.horde {
 		group.Go(tinker(ctx, g.scrawler, d))
@@ -75,7 +83,7 @@ func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
 		case err := <-ch:
 			scrawl(
 				slog.LevelError,
-				"goblin couldn’t handle a daemon — it backfired!",
+				"goblin couldn’t handle the daemon — it backfired!",
 				slog.String("name", daemon.Name()),
 				slog.String("cause", err.Error()),
 			)

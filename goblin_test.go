@@ -140,6 +140,45 @@ func TestGoblin_Awaken(t *testing.T) {
 			},
 		},
 		{
+			name: "with context success",
+			f: func(t *testing.T) {
+				handler := pingPongHandler{}
+				srv := Server{
+					addr:    addr,
+					timeout: time.Second,
+					http: &http.Server{
+						Addr:    addr,
+						Handler: handler,
+					},
+				}
+
+				go func() {
+					res, err := http.Get(host)
+					if err != nil {
+						t.Errorf("failed to send request: %v", err)
+					}
+
+					data, err := io.ReadAll(res.Body)
+					if err != nil {
+						t.Errorf("failed to parse reposne: %v", err)
+					}
+
+					if string(data) != keyWord {
+						t.Errorf("unexpected key word: got %v", string(data))
+					}
+				}()
+
+				gob := goblin.New(goblin.WithDaemon(srv))
+
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+
+				if err := gob.AwakenContext(ctx); err != nil {
+					t.Errorf("goblin awaken: %v", err)
+				}
+			},
+		},
+		{
 			name: "server already started",
 			f: func(t *testing.T) {
 				buff := &bytes.Buffer{}

@@ -2,11 +2,11 @@
 
 ![Goblin logo](https://github.com/user-attachments/assets/4cc9f068-9f31-424e-a353-2f0c645f48c8)
 
-Welcome to **Goblin**, a mischievous Go library for managing daemons like a true goblin would — with magic, chaos, and just a touch of mayhem. 🧙‍♂️✨
+Welcome to **Goblin**, a deceptively simple Go library for managing daemons — small in size, mighty in magic, and always up to a bit of mischief. 🧙‍♂️✨
 
 ## Features
 
-- 🌀 **Tame Your Daemons**: Goblin can awaken, silence, and tame your daemons.
+- 🌀 **Awaken Your Daemons**: Goblin awakens your daemons, starting them up and putting them to work.
 - 🪄 **Graceful Shutdown**: Goblin ensures your daemons rest peacefully.
 - 🧻 **Goblin Vibe**: Every action, failure, and success is sprinkled with a dash of goblin chaos.
 
@@ -45,10 +45,20 @@ gob := goblin.New(
 )
 
 if err := gob.Awaken(); err != nil {
-    logger.Error("goblin couldn’t tame the daemons", "cause", err)
+    logger.Error("goblin couldn’t awaken", "cause", err)
 }
 ```
 
+Need more control? Use `AwakenContext` to awaken a daemon with a custom `context.Context`. This is useful when you want to manage cancellation or timeouts more precisely.
+
+```go
+
+ctx, cancel := context.WithCancel(context.Background())
+defer cancel()
+
+if err := gob.Awaken(ctx); err != nil {
+    logger.Error("goblin couldn’t awaken", "cause", err)
+}
 
 ### License
 

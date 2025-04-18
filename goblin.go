@@ -24,8 +24,8 @@ type Config struct {
 type Option func(*Config)
 
 type Goblin struct {
-	horde    []Daemon
-	scrawler Scrawler
+	horde  []Daemon
+	scrawl Scrawler
 }
 
 func New(opts ...Option) Goblin {
@@ -36,8 +36,8 @@ func New(opts ...Option) Goblin {
 	}
 
 	return Goblin{
-		scrawler: withLogbook(conf.book),
-		horde:    conf.horde,
+		scrawl: withLogbook(conf.book),
+		horde:  conf.horde,
 	}
 }
 
@@ -56,12 +56,14 @@ func (g Goblin) awaken(parent context.Context) error {
 	group, ctx := errgroup.WithContext(notifyCtx)
 
 	for _, d := range g.horde {
-		group.Go(tinker(ctx, g.scrawler, d))
+		group.Go(tinker(ctx, g.scrawl, d))
 	}
 
 	if err := group.Wait(); err != nil {
 		return err
 	}
+
+	g.scrawl(slog.LevelInfo, "daemons asleep, goblin vanishes")
 
 	return nil
 }
@@ -83,7 +85,7 @@ func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
 		case err := <-ch:
 			scrawl(
 				slog.LevelError,
-				"goblin couldn’t handle the daemon — it backfired!",
+				"goblin couldn’t handle the daemon — it backfired",
 				slog.String("name", daemon.Name()),
 				slog.String("cause", err.Error()),
 			)
@@ -92,14 +94,14 @@ func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
 			if err := daemon.Shutdown(); err != nil {
 				scrawl(
 					slog.LevelError,
-					"goblin couldn’t silence the daemon — it fought back!",
+					"goblin couldn’t silence the daemon — it fought back",
 					slog.String("name", daemon.Name()),
 					slog.String("cause", err.Error()),
 				)
 				return err
 			}
 
-			scrawl(slog.LevelInfo, "goblin tamed the daemon — it’s now resting!", slog.String("name", daemon.Name()))
+			scrawl(slog.LevelInfo, "goblin tamed the daemon — it’s now resting", slog.String("name", daemon.Name()))
 			return nil
 		}
 	}

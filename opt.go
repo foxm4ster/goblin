@@ -4,23 +4,23 @@ import (
 	"log/slog"
 )
 
-type Config struct {
+type Manifest struct {
 	book  *slog.Logger
 	horde []Daemon
 }
 
-type Option func(*Config)
+type Option func(*Manifest)
 
 func WithDaemon(horde ...Daemon) Option {
-	return func(c *Config) {
-		c.horde = horde
+	return func(m *Manifest) {
+		m.horde = horde
 	}
 }
 
 func WithLogbook(book *slog.Logger) Option {
-	return func(c *Config) {
-		if book != nil && c.book == nil {
-			c.book = book
+	return func(m *Manifest) {
+		if book != nil && m.book == nil {
+			m.book = book
 		}
 	}
 }

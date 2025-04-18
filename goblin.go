@@ -22,15 +22,15 @@ type Goblin struct {
 }
 
 func New(opts ...Option) Goblin {
-	conf := &Config{}
+	man := &Manifest{}
 
 	for _, opt := range opts {
-		opt(conf)
+		opt(man)
 	}
 
 	return Goblin{
-		scrawl: withLogbook(conf.book),
-		horde:  conf.horde,
+		scrawl: withLogbook(man.book),
+		horde:  man.horde,
 	}
 }
 
@@ -67,7 +67,7 @@ func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
 		defer close(ch)
 
 		go func() {
-			scrawl(slog.LevelInfo, "tinkering with ...", slog.String("name", daemon.Name()))
+			scrawl(slog.LevelInfo, "goblin is tinkering with ...", slog.String("name", daemon.Name()))
 
 			if err := daemon.Serve(); err != nil {
 				ch <- err
@@ -78,7 +78,7 @@ func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
 		case err := <-ch:
 			scrawl(
 				slog.LevelError,
-				"goblin couldn’t handle the daemon — it backfired",
+				"goblin couldn’t summon the daemon",
 				slog.String("name", daemon.Name()),
 				slog.String("cause", err.Error()),
 			)
@@ -87,14 +87,14 @@ func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
 			if err := daemon.Shutdown(); err != nil {
 				scrawl(
 					slog.LevelError,
-					"goblin couldn’t silence the daemon — it fought back",
+					"goblin couldn’t silence the daemon",
 					slog.String("name", daemon.Name()),
 					slog.String("cause", err.Error()),
 				)
 				return err
 			}
 
-			scrawl(slog.LevelInfo, "goblin tamed the daemon — it’s now resting", slog.String("name", daemon.Name()))
+			scrawl(slog.LevelInfo, "goblin silenced the daemon", slog.String("name", daemon.Name()))
 			return nil
 		}
 	}

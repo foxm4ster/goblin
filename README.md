@@ -16,6 +16,8 @@ Goblin creates a **daemon manager** that can handle multiple daemons(horde) and 
 
 ### Daemon Interface
 
+In your codebase you just need to implement the `Daemon` interface to pass it into Goblin. Goblin will handle the rest.
+
 ```go
 type Daemon interface {
     // The name of the daemon (used for logs and tracking)
@@ -59,6 +61,7 @@ defer cancel()
 if err := gob.Awaken(ctx); err != nil {
     logger.Error("goblin couldn’t awaken", "cause", err)
 }
+```
 
 ### License
 

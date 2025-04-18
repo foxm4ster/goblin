@@ -16,13 +16,6 @@ type Daemon interface {
 	Shutdown() error
 }
 
-type Config struct {
-	book  *slog.Logger
-	horde []Daemon
-}
-
-type Option func(*Config)
-
 type Goblin struct {
 	horde  []Daemon
 	scrawl Scrawler

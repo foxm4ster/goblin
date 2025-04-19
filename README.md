@@ -16,7 +16,7 @@ Welcome to **Goblin**, a deceptively simple Go library for managing daemons — 
 
 ## How It Works
 
-Goblin creates a **daemon manager** that can handle multiple daemons(horde) and control their lifecycle. Each daemon is a mischievous creature in its own right, and Goblin ensures they follow your commands (or at least tries its best!). With a playful approach to error handling and logging, Goblin never fails to entertain while it works its magic.
+Goblin handles multiple daemons(horde) and controls their lifecycle. Each daemon is a mischievous creature in its own right, and Goblin ensures they follow your commands (or at least tries its best!). With a playful approach to error handling and logging, Goblin never fails to entertain while it works its magic.
 
 ### Daemon Interface
 
@@ -55,7 +55,7 @@ if err := gob.Awaken(); err != nil {
 }
 ```
 
-Use `AwakenContext` to awaken a daemon with a custom `context.Context`. This is useful when you want to manage cancellation or timeouts more precisely.
+Use `AwakenContext` to awaken the daemons with a custom `context.Context`. This is useful when you want to manage cancellation or timeouts more precisely.
 
 ```go
 

@@ -51,14 +51,14 @@ if err := gob.Awaken(); err != nil {
 }
 ```
 
-Need more control? Use `AwakenContext` to awaken a daemon with a custom `context.Context`. This is useful when you want to manage cancellation or timeouts more precisely.
+Use `AwakenContext` to awaken a daemon with a custom `context.Context`. This is useful when you want to manage cancellation or timeouts more precisely.
 
 ```go
 
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
 
-if err := gob.Awaken(ctx); err != nil {
+if err := gob.AwakenContext(ctx); err != nil {
     logger.Error("goblin couldn’t awaken", "cause", err)
 }
 ```

@@ -2,7 +2,6 @@ package goblin
 
 import (
 	"context"
-	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -24,7 +23,7 @@ type Goblin struct {
 
 func New(opts ...Option) Goblin {
 	man := &Manifest{
-		book: slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})),
+		book: slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})),
 	}
 
 	for _, opt := range opts {

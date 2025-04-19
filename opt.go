@@ -19,7 +19,7 @@ func WithDaemon(horde ...Daemon) Option {
 
 func WithLogbook(book *slog.Logger) Option {
 	return func(m *Manifest) {
-		if book != nil && m.book == nil {
+		if book != nil {
 			m.book = book
 		}
 	}

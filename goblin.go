@@ -2,6 +2,7 @@ package goblin
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -17,20 +18,22 @@ type Daemon interface {
 }
 
 type Goblin struct {
-	horde  []Daemon
-	scrawl Scrawler
+	horde []Daemon
+	book  *slog.Logger
 }
 
 func New(opts ...Option) Goblin {
-	man := &Manifest{}
+	man := &Manifest{
+		book: slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})),
+	}
 
 	for _, opt := range opts {
 		opt(man)
 	}
 
 	return Goblin{
-		scrawl: withLogbook(man.book),
-		horde:  man.horde,
+		book:  man.book,
+		horde: man.horde,
 	}
 }
 
@@ -49,25 +52,25 @@ func (g Goblin) awaken(parent context.Context) error {
 	group, ctx := errgroup.WithContext(notifyCtx)
 
 	for _, d := range g.horde {
-		group.Go(tinker(ctx, g.scrawl, d))
+		group.Go(tinker(ctx, g.book, d))
 	}
 
 	if err := group.Wait(); err != nil {
 		return err
 	}
 
-	g.scrawl(slog.LevelInfo, "daemons asleep, goblin vanishes")
+	g.book.Info("daemons asleep, goblin vanishes")
 
 	return nil
 }
 
-func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
+func tinker(ctx context.Context, book *slog.Logger, daemon Daemon) func() error {
 	return func() error {
 		ch := make(chan error, 1)
 		defer close(ch)
 
 		go func() {
-			scrawl(slog.LevelInfo, "goblin is tinkering with ...", slog.String("name", daemon.Name()))
+			book.Info("goblin is tinkering with ...", "name", daemon.Name())
 
 			if err := daemon.Serve(); err != nil {
 				ch <- err
@@ -76,25 +79,15 @@ func tinker(ctx context.Context, scrawl Scrawler, daemon Daemon) func() error {
 
 		select {
 		case err := <-ch:
-			scrawl(
-				slog.LevelError,
-				"goblin couldn’t summon the daemon",
-				slog.String("name", daemon.Name()),
-				slog.String("cause", err.Error()),
-			)
+			book.Error("goblin couldn’t summon the daemon", "name", daemon.Name(), "cause", err.Error())
 			return err
 		case <-ctx.Done():
 			if err := daemon.Shutdown(); err != nil {
-				scrawl(
-					slog.LevelError,
-					"goblin couldn’t silence the daemon",
-					slog.String("name", daemon.Name()),
-					slog.String("cause", err.Error()),
-				)
+				book.Error("goblin couldn’t silence the daemon", "name", daemon.Name(), "cause", err.Error())
 				return err
 			}
 
-			scrawl(slog.LevelInfo, "goblin silenced the daemon", slog.String("name", daemon.Name()))
+			book.Info("goblin silenced the daemon", "name", daemon.Name())
 			return nil
 		}
 	}

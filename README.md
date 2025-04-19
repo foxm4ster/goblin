@@ -1,5 +1,9 @@
 # Goblin: The Daemon Tamer 🧙‍♂️👹
 
+[![GoDoc](https://godoc.org/github.com/foxm4ster/goblin?status.svg)](https://godoc.org/github.com/foxm4ster/goblin)
+[![Go Report Card](https://goreportcard.com/badge/github.com/foxm4ster/goblin)](https://goreportcard.com/report/github.com/foxm4ster/goblin)
+![License](https://img.shields.io/dub/l/vibe-d.svg)
+
 ![Goblin logo](https://github.com/user-attachments/assets/4cc9f068-9f31-424e-a353-2f0c645f48c8)
 
 Welcome to **Goblin**, a deceptively simple Go library for managing daemons — small in size, mighty in magic, and always up to a bit of mischief. 🧙‍♂️✨

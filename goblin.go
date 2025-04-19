@@ -23,7 +23,7 @@ type Goblin struct {
 
 func New(opts ...Option) Goblin {
 	man := &Manifest{
-		book: slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})),
+		book: slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{})),
 	}
 
 	for _, opt := range opts {
@@ -78,15 +78,15 @@ func tinker(ctx context.Context, book *slog.Logger, daemon Daemon) func() error 
 
 		select {
 		case err := <-ch:
-			book.Error("goblin couldn’t summon the daemon", "name", daemon.Name(), "cause", err.Error())
+			book.Error("goblin couldn’t summon the daemon - it backfired", "name", daemon.Name(), "cause", err.Error())
 			return err
 		case <-ctx.Done():
 			if err := daemon.Shutdown(); err != nil {
-				book.Error("goblin couldn’t silence the daemon", "name", daemon.Name(), "cause", err.Error())
+				book.Error("goblin couldn’t silence the daemon - the hush spell failed", "name", daemon.Name(), "cause", err.Error())
 				return err
 			}
 
-			book.Info("goblin silenced the daemon", "name", daemon.Name())
+			book.Info("goblin silenced the daemon, it's now resting", "name", daemon.Name())
 			return nil
 		}
 	}

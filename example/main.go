@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/rand/v2"
@@ -45,6 +46,10 @@ func (s Server) Shutdown() error {
 	defer cancel()
 
 	time.Sleep(time.Duration(rand.IntN(5)) * time.Second)
+
+	if rand.IntN(10)%2 == 0 {
+		return errors.New("some error")
+	}
 
 	return s.server.Shutdown(ctx)
 }

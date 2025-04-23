@@ -45,12 +45,10 @@ myDaemon := &MyDaemon{}
 // Define another daemon
 srv := NewHTTPServer(addr, handler)
 
-gob := goblin.New(
-    goblin.WithLogbook(logger),
+if err := goblin.Awaken(
+		goblin.WithLogbook(logger),
     goblin.WithDaemon(myDaemon, srv),
-)
-
-if err := gob.Awaken(); err != nil {
+); err != nil {
     logger.Error("goblin couldn’t awaken", "cause", err)
 }
 ```
@@ -62,7 +60,7 @@ Use `AwakenContext` to awaken the daemons with a custom `context.Context`. This 
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
 
-if err := gob.AwakenContext(ctx); err != nil {
+if err := goblin.AwakenContext(ctx); err != nil {
     logger.Error("goblin couldn’t awaken", "cause", err)
 }
 ```

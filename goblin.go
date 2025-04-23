@@ -16,49 +16,37 @@ type Daemon interface {
 	Shutdown() error
 }
 
-type Goblin struct {
-	horde []Daemon
-	book  *slog.Logger
+func Awaken(opts ...Option) error {
+	return awaken(context.Background(), opts...)
 }
 
-func New(opts ...Option) Goblin {
-	man := &Manifest{
-		book: slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{})),
-	}
+func AwakenContext(ctx context.Context, opts ...Option) error {
+	return awaken(ctx, opts...)
+}
+
+func awaken(parent context.Context, opts ...Option) error {
+	manifest := &Manifest{}
 
 	for _, opt := range opts {
-		opt(man)
+		opt(manifest)
 	}
 
-	return Goblin{
-		book:  man.book,
-		horde: man.horde,
-	}
-}
-
-func (g Goblin) Awaken() error {
-	return g.awaken(context.Background())
-}
-
-func (g Goblin) AwakenContext(ctx context.Context) error {
-	return g.awaken(ctx)
-}
-
-func (g Goblin) awaken(parent context.Context) error {
 	notifyCtx, cancel := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	group, ctx := errgroup.WithContext(notifyCtx)
 
-	for _, d := range g.horde {
-		group.Go(tinker(ctx, g.book, d))
+	for _, d := range manifest.horde {
+		group.Go(tinker(ctx, manifest.book, d))
 	}
 
 	if err := group.Wait(); err != nil {
 		return err
 	}
 
-	g.book.Info("daemons asleep, goblin vanishes")
+	if manifest.book != nil {
+		manifest.book.Info("daemons asleep, goblin vanishes")
+	}
 
 	return nil
 }
@@ -69,7 +57,9 @@ func tinker(ctx context.Context, book *slog.Logger, daemon Daemon) func() error 
 		defer close(ch)
 
 		go func() {
-			book.Info("goblin is tinkering with ...", "name", daemon.Name())
+			if book != nil {
+				book.Info("goblin is tinkering with ...", "name", daemon.Name())
+			}
 
 			if err := daemon.Serve(); err != nil {
 				ch <- err
@@ -78,15 +68,22 @@ func tinker(ctx context.Context, book *slog.Logger, daemon Daemon) func() error 
 
 		select {
 		case err := <-ch:
-			book.Error("goblin couldn’t summon the daemon - it backfired", "name", daemon.Name(), "cause", err.Error())
+			if book != nil {
+				book.Error("goblin couldn’t summon the daemon - it backfired", "name", daemon.Name(), "cause", err.Error())
+			}
 			return err
 		case <-ctx.Done():
 			if err := daemon.Shutdown(); err != nil {
-				book.Error("goblin couldn’t silence the daemon - the hush spell failed", "name", daemon.Name(), "cause", err.Error())
+				if book != nil {
+					book.Error("goblin couldn’t silence the daemon - the hush spell failed", "name", daemon.Name(), "cause", err.Error())
+				}
 				return err
 			}
 
-			book.Info("goblin silenced the daemon, it's now resting", "name", daemon.Name())
+			if book != nil {
+				book.Info("goblin silenced the daemon, it's now resting", "name", daemon.Name())
+			}
+
 			return nil
 		}
 	}

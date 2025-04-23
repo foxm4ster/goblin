@@ -89,9 +89,7 @@ func TestGoblin_Awaken(t *testing.T) {
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
-				gob := goblin.New(goblin.WithDaemon(srv))
-
-				if err := gob.Awaken(); err != nil {
+				if err := goblin.Awaken(goblin.WithDaemon(srv)); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
 			},
@@ -132,9 +130,10 @@ func TestGoblin_Awaken(t *testing.T) {
 
 				logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
 
-				gob := goblin.New(goblin.WithLogbook(logger), goblin.WithDaemon(srv))
-
-				if err := gob.Awaken(); err != nil {
+				if err := goblin.Awaken(
+					goblin.WithLogbook(logger),
+					goblin.WithDaemon(srv),
+				); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
 			},
@@ -168,12 +167,10 @@ func TestGoblin_Awaken(t *testing.T) {
 					}
 				}()
 
-				gob := goblin.New(goblin.WithDaemon(srv))
-
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 				defer cancel()
 
-				if err := gob.AwakenContext(ctx); err != nil {
+				if err := goblin.AwakenContext(ctx, goblin.WithDaemon(srv)); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
 			},
@@ -209,12 +206,10 @@ func TestGoblin_Awaken(t *testing.T) {
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
-				gob := goblin.New(
+				if err := goblin.Awaken(
 					goblin.WithLogbook(logger),
 					goblin.WithDaemon(srv, srv2),
-				)
-
-				if err := gob.Awaken(); err == nil {
+				); err == nil {
 					t.Errorf("goblin expected err, got nil")
 					return
 				}
@@ -294,12 +289,10 @@ func TestGoblin_Awaken(t *testing.T) {
 					first <- struct{}{}
 				}()
 
-				gob := goblin.New(
+				if err := goblin.Awaken(
 					goblin.WithLogbook(logger),
 					goblin.WithDaemon(srv),
-				)
-
-				if err := gob.Awaken(); err != nil {
+				); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
 			},
@@ -360,12 +353,10 @@ func TestGoblin_Awaken(t *testing.T) {
 					first <- struct{}{}
 				}()
 
-				gob := goblin.New(
+				err := goblin.Awaken(
 					goblin.WithLogbook(logger),
 					goblin.WithDaemon(srv),
 				)
-
-				err := gob.Awaken()
 				if err == nil {
 					t.Error("goblin aweken expects error got nil")
 				}

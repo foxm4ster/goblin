@@ -72,12 +72,10 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
 
-	gob := goblin.New(
+	if err := goblin.Awaken(
 		goblin.WithLogbook(logger),
 		goblin.WithDaemon(srv, srv2, srv3, srv4),
-	)
-
-	if err := gob.Awaken(); err != nil {
+	); err != nil {
 		logger.Error("goblin awaken", slog.Any("cause", err))
 		return
 	}

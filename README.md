@@ -60,7 +60,8 @@ Use `AwakenContext` to awaken the daemons with a custom `context.Context`. This 
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
 
-if err := goblin.AwakenContext(ctx,
+if err := goblin.AwakenContext(
+	ctx,
 	goblin.WithLogbook(logger),
 	goblin.WithDaemon(myDaemon, srv),
 ); err != nil {

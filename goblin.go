@@ -2,7 +2,6 @@ package goblin
 
 import (
 	"context"
-	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -31,35 +30,36 @@ func awaken(parent context.Context, opts ...Option) error {
 		opt(manifest)
 	}
 
+	if manifest.info == nil || manifest.error == nil {
+		manifest.info = discard
+		manifest.error = discard
+	}
+
 	notifyCtx, cancel := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	group, ctx := errgroup.WithContext(notifyCtx)
 
 	for _, d := range manifest.horde {
-		group.Go(tinker(ctx, manifest.book, d))
+		group.Go(tinker(ctx, d, manifest.info, manifest.error))
 	}
 
 	if err := group.Wait(); err != nil {
 		return err
 	}
 
-	if manifest.book != nil {
-		manifest.book.Info("daemons asleep, goblin vanishes")
-	}
+	manifest.info("daemons asleep, goblin vanishes")
 
 	return nil
 }
 
-func tinker(ctx context.Context, book *slog.Logger, daemon Daemon) func() error {
+func tinker(ctx context.Context, daemon Daemon, infof, errf func(msg string, args ...any)) func() error {
 	return func() error {
 		ch := make(chan error, 1)
 		defer close(ch)
 
 		go func() {
-			if book != nil {
-				book.Info("goblin is tinkering with ...", "name", daemon.Name())
-			}
+			infof("goblin is tinkering with ...", "name", daemon.Name())
 
 			if err := daemon.Serve(); err != nil {
 				ch <- err
@@ -68,23 +68,19 @@ func tinker(ctx context.Context, book *slog.Logger, daemon Daemon) func() error 
 
 		select {
 		case err := <-ch:
-			if book != nil {
-				book.Error("goblin couldn’t summon the daemon - it backfired", "name", daemon.Name(), "cause", err.Error())
-			}
+			errf("goblin couldn’t summon the daemon - it backfired", "name", daemon.Name(), "cause", err.Error())
 			return err
 		case <-ctx.Done():
 			if err := daemon.Shutdown(); err != nil {
-				if book != nil {
-					book.Error("goblin couldn’t silence the daemon - the hush spell failed", "name", daemon.Name(), "cause", err.Error())
-				}
+				errf("goblin couldn’t silence the daemon - the hush spell failed", "name", daemon.Name(), "cause", err.Error())
 				return err
 			}
 
-			if book != nil {
-				book.Info("goblin silenced the daemon, it's now resting", "name", daemon.Name())
-			}
-
-			return nil
+			infof("goblin silenced the daemon, it's now resting", "name", daemon.Name())
 		}
+
+		return nil
 	}
 }
+
+func discard(msg string, args ...any) {}

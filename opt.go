@@ -5,8 +5,9 @@ import (
 )
 
 type Manifest struct {
-	book  *slog.Logger
 	horde []Daemon
+	info func(msg string, args ...any)
+	error  func(msg string, args ...any)
 }
 
 type Option func(*Manifest)
@@ -19,6 +20,11 @@ func WithDaemon(horde ...Daemon) Option {
 
 func WithLogbook(book *slog.Logger) Option {
 	return func(m *Manifest) {
-		m.book = book
+		if book == nil {
+			return
+		}
+
+		m.info = book.Info
+		m.error = book.Error
 	}
 }

@@ -95,6 +95,48 @@ func TestGoblin_Awaken(t *testing.T) {
 			},
 		},
 		{
+			name: "silent success 2",
+			f: func(t *testing.T) {
+				handler := pingPongHandler{}
+				srv := Server{
+					addr:    addr,
+					timeout: time.Second,
+					http: &http.Server{
+						Addr:    addr,
+						Handler: handler,
+					},
+				}
+
+				go func() {
+					res, err := http.Get(host)
+					if err != nil {
+						t.Errorf("failed to send request: %v", err)
+					}
+
+					data, err := io.ReadAll(res.Body)
+					if err != nil {
+						t.Errorf("failed to parse reposne: %v", err)
+					}
+
+					if string(data) != keyWord {
+						t.Errorf("unexpected key word: got %v", string(data))
+					}
+				}()
+
+				go func() {
+					time.Sleep(1 * time.Second)
+					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+				}()
+
+				if err := goblin.Awaken(
+					goblin.WithLogbook(nil),
+					goblin.WithDaemon(srv),
+				); err != nil {
+					t.Errorf("goblin awaken: %v", err)
+				}
+			},
+		},
+		{
 			name: "success with logger",
 			f: func(t *testing.T) {
 				handler := pingPongHandler{}

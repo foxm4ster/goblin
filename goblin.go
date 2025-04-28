@@ -53,13 +53,13 @@ func awaken(parent context.Context, opts ...Option) error {
 	return nil
 }
 
-func tinker(ctx context.Context, daemon Daemon, infof, errf func(msg string, args ...any)) func() error {
+func tinker(ctx context.Context, daemon Daemon, infoFunc, errFunc func(msg string, args ...any)) func() error {
 	return func() error {
 		ch := make(chan error, 1)
 		defer close(ch)
 
 		go func() {
-			infof("goblin is tinkering with ...", "name", daemon.Name())
+			infoFunc("goblin is tinkering with ...", "name", daemon.Name())
 
 			if err := daemon.Serve(); err != nil {
 				ch <- err
@@ -68,15 +68,15 @@ func tinker(ctx context.Context, daemon Daemon, infof, errf func(msg string, arg
 
 		select {
 		case err := <-ch:
-			errf("goblin couldn’t summon the daemon - it backfired", "name", daemon.Name(), "cause", err.Error())
+			errFunc("goblin couldn’t summon the daemon - it backfired", "name", daemon.Name(), "cause", err.Error())
 			return err
 		case <-ctx.Done():
 			if err := daemon.Shutdown(); err != nil {
-				errf("goblin couldn’t silence the daemon - the hush spell failed", "name", daemon.Name(), "cause", err.Error())
+				errFunc("goblin couldn’t silence the daemon - the hush spell failed", "name", daemon.Name(), "cause", err.Error())
 				return err
 			}
 
-			infof("goblin silenced the daemon, it's now resting", "name", daemon.Name())
+			infoFunc("goblin silenced the daemon, it's now resting", "name", daemon.Name())
 		}
 
 		return nil

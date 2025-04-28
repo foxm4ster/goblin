@@ -7,7 +7,7 @@ import (
 type Manifest struct {
 	horde []Daemon
 	info func(msg string, args ...any)
-	error  func(msg string, args ...any)
+	error func(msg string, args ...any)
 }
 
 type Option func(*Manifest)
@@ -18,13 +18,13 @@ func WithDaemon(horde ...Daemon) Option {
 	}
 }
 
-func WithLogbook(book *slog.Logger) Option {
+func WithLogbook(l *slog.Logger) Option {
 	return func(m *Manifest) {
-		if book == nil {
+		if l == nil {
 			return
 		}
 
-		m.info = book.Info
-		m.error = book.Error
+		m.info = l.Info
+		m.error = l.Error
 	}
 }

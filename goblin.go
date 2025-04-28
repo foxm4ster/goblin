@@ -9,30 +9,30 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type Daemon interface {
-	Name() string
+type Server interface {
+	ID() string
 	Serve() error
 	Shutdown() error
 }
 
-func Awaken(opts ...Option) error {
-	return awaken(context.Background(), opts...)
+func Run(opts ...Option) error {
+	return run(context.Background(), opts...)
 }
 
-func AwakenContext(ctx context.Context, opts ...Option) error {
-	return awaken(ctx, opts...)
+func RunContext(ctx context.Context, opts ...Option) error {
+	return run(ctx, opts...)
 }
 
-func awaken(parent context.Context, opts ...Option) error {
-	manifest := &Manifest{}
+func run(parent context.Context, opts ...Option) error {
+	conf := &Config{}
 
 	for _, opt := range opts {
-		opt(manifest)
+		opt(conf)
 	}
 
-	if manifest.info == nil || manifest.error == nil {
-		manifest.info = discard
-		manifest.error = discard
+	if conf.logInfo == nil || conf.logErr == nil {
+		conf.logInfo = discard
+		conf.logErr = discard
 	}
 
 	notifyCtx, cancel := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM)
@@ -40,43 +40,43 @@ func awaken(parent context.Context, opts ...Option) error {
 
 	group, ctx := errgroup.WithContext(notifyCtx)
 
-	for _, d := range manifest.horde {
-		group.Go(tinker(ctx, d, manifest.info, manifest.error))
+	for _, srv := range conf.servers {
+		group.Go(handler(ctx, srv, conf.logInfo, conf.logErr))
 	}
 
 	if err := group.Wait(); err != nil {
 		return err
 	}
 
-	manifest.info("daemons asleep, goblin vanishes")
+	conf.logInfo("goblin has shut down all servers")
 
 	return nil
 }
 
-func tinker(ctx context.Context, daemon Daemon, infoFunc, errFunc func(msg string, args ...any)) func() error {
+func handler(ctx context.Context, srv Server, logInfo, logErr LogFunc) func() error {
 	return func() error {
 		ch := make(chan error, 1)
 		defer close(ch)
 
 		go func() {
-			infoFunc("goblin is tinkering with ...", "name", daemon.Name())
+			logInfo("goblin is starting the server", "id", srv.ID())
 
-			if err := daemon.Serve(); err != nil {
+			if err := srv.Serve(); err != nil {
 				ch <- err
 			}
 		}()
 
 		select {
 		case err := <-ch:
-			errFunc("goblin couldn’t summon the daemon - it backfired", "name", daemon.Name(), "cause", err.Error())
+			logErr("goblin could't start the server", "id", srv.ID(), "cause", err.Error())
 			return err
 		case <-ctx.Done():
-			if err := daemon.Shutdown(); err != nil {
-				errFunc("goblin couldn’t silence the daemon - the hush spell failed", "name", daemon.Name(), "cause", err.Error())
+			if err := srv.Shutdown(); err != nil {
+				logErr("goblin couldn't shut down the server", "id", srv.ID(), "cause", err.Error())
 				return err
 			}
 
-			infoFunc("goblin silenced the daemon, it's now resting", "name", daemon.Name())
+			logInfo("goblin successfully shut down the server", "id", srv.ID())
 		}
 
 		return nil

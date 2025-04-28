@@ -1,30 +1,28 @@
 package goblin
 
-import (
-	"log/slog"
-)
+type LogFunc func(msg string, args ...any)
 
-type Manifest struct {
-	horde []Daemon
-	info func(msg string, args ...any)
-	error func(msg string, args ...any)
+type Config struct {
+	servers []Server
+	logInfo LogFunc
+	logErr  LogFunc
 }
 
-type Option func(*Manifest)
+type Option func(*Config)
 
-func WithDaemon(horde ...Daemon) Option {
-	return func(m *Manifest) {
-		m.horde = horde
+func WithServer(s ...Server) Option {
+	return func(c *Config) {
+		c.servers = s
 	}
 }
 
-func WithLogbook(l *slog.Logger) Option {
-	return func(m *Manifest) {
-		if l == nil {
+func WithLogFuncs(info, error LogFunc) Option {
+	return func(c *Config) {
+		if info == nil || error == nil {
 			return
 		}
 
-		m.info = l.Info
-		m.error = l.Error
+		c.logInfo = info
+		c.logErr = error
 	}
 }

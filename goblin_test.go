@@ -29,7 +29,7 @@ type Server struct {
 	timeout time.Duration
 }
 
-func (s Server) Name() string {
+func (s Server) ID() string {
 	return s.addr
 }
 
@@ -50,7 +50,7 @@ func (h pingPongHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	_, _ = fmt.Fprintf(w, keyWord)
 }
 
-func TestGoblin_Awaken(t *testing.T) {
+func TestGoblin_Run(t *testing.T) {
 	tests := []struct {
 		name string
 		f    func(t *testing.T)
@@ -89,7 +89,7 @@ func TestGoblin_Awaken(t *testing.T) {
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
-				if err := goblin.Awaken(goblin.WithDaemon(srv)); err != nil {
+				if err := goblin.Run(goblin.WithServer(srv)); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
 			},
@@ -128,9 +128,9 @@ func TestGoblin_Awaken(t *testing.T) {
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
-				if err := goblin.Awaken(
-					goblin.WithLogbook(nil),
-					goblin.WithDaemon(srv),
+				if err := goblin.Run(
+					goblin.WithLogFuncs(nil, nil),
+					goblin.WithServer(srv),
 				); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
@@ -172,9 +172,9 @@ func TestGoblin_Awaken(t *testing.T) {
 
 				logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
 
-				if err := goblin.Awaken(
-					goblin.WithLogbook(logger),
-					goblin.WithDaemon(srv),
+				if err := goblin.Run(
+					goblin.WithLogFuncs(logger.Info, logger.Error),
+					goblin.WithServer(srv),
 				); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
@@ -212,7 +212,7 @@ func TestGoblin_Awaken(t *testing.T) {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 				defer cancel()
 
-				if err := goblin.AwakenContext(ctx, goblin.WithDaemon(srv)); err != nil {
+				if err := goblin.RunContext(ctx, goblin.WithServer(srv)); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
 			},
@@ -248,9 +248,9 @@ func TestGoblin_Awaken(t *testing.T) {
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
-				if err := goblin.Awaken(
-					goblin.WithLogbook(logger),
-					goblin.WithDaemon(srv, srv2),
+				if err := goblin.Run(
+					goblin.WithLogFuncs(logger.Info, logger.Error),
+					goblin.WithServer(srv, srv2),
 				); err == nil {
 					t.Errorf("goblin expected err, got nil")
 					return
@@ -331,9 +331,9 @@ func TestGoblin_Awaken(t *testing.T) {
 					first <- struct{}{}
 				}()
 
-				if err := goblin.Awaken(
-					goblin.WithLogbook(logger),
-					goblin.WithDaemon(srv),
+				if err := goblin.Run(
+					goblin.WithLogFuncs(logger.Info, logger.Error),
+					goblin.WithServer(srv),
 				); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
@@ -395,9 +395,9 @@ func TestGoblin_Awaken(t *testing.T) {
 					first <- struct{}{}
 				}()
 
-				err := goblin.Awaken(
-					goblin.WithLogbook(logger),
-					goblin.WithDaemon(srv),
+				err := goblin.Run(
+					goblin.WithLogFuncs(logger.Info, logger.Error),
+					goblin.WithServer(srv),
 				)
 				if err == nil {
 					t.Error("goblin aweken expects error got nil")

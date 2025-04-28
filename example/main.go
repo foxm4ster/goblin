@@ -30,7 +30,7 @@ func NewServer(addr string, handler http.Handler, timeout time.Duration) Server 
 	}
 }
 
-func (s Server) Name() string {
+func (s Server) ID() string {
 	return s.addr
 }
 
@@ -72,11 +72,11 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
 
-	if err := goblin.Awaken(
-		goblin.WithLogbook(logger),
-		goblin.WithDaemon(srv, srv2, srv3, srv4),
+	if err := goblin.Run(
+		goblin.WithLogFuncs(logger.Info, logger.Error),
+		goblin.WithServer(srv, srv2, srv3, srv4),
 	); err != nil {
-		logger.Error("goblin awaken", slog.Any("cause", err))
+		logger.Error("goblin run", slog.Any("cause", err))
 		return
 	}
 }

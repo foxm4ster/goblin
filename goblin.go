@@ -68,7 +68,7 @@ func handler(ctx context.Context, srv Server, logInfo, logErr LogFunc) func() er
 
 		select {
 		case err := <-ch:
-			logErr("goblin could't start the server", "id", srv.ID(), "cause", err.Error())
+			logErr("goblin couldn't start the server", "id", srv.ID(), "cause", err.Error())
 			return err
 		case <-ctx.Done():
 			if err := srv.Shutdown(); err != nil {

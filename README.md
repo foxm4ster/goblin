@@ -22,10 +22,10 @@ type Service interface {
 
 ```go
 
-// Define a daemon
+// Define a service
 myService := &MyService{}
 
-// Define another daemon
+// Define another service
 srv := NewHTTPServer(addr, handler)
 
 if err := goblin.Run(

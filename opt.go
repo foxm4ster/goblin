@@ -3,9 +3,8 @@ package goblin
 type LogFunc func(msg string, args ...any)
 
 type Config struct {
-	servers []Server
-	logInfo LogFunc
-	logErr  LogFunc
+	servers         []Server
+	logInfo, logErr LogFunc
 }
 
 type Option func(*Config)

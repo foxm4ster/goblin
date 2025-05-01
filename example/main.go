@@ -74,7 +74,7 @@ func main() {
 
 	if err := goblin.Run(
 		goblin.WithLogFuncs(logger.Info, logger.Error),
-		goblin.WithServer(srv, srv2, srv3, srv4),
+		goblin.WithService(srv, srv2, srv3, srv4),
 	); err != nil {
 		logger.Error("goblin run", slog.Any("cause", err))
 		return

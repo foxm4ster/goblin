@@ -9,7 +9,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type Server interface {
+type Service interface {
 	ID() string
 	Serve() error
 	Shutdown() error
@@ -40,7 +40,7 @@ func run(parent context.Context, opts ...Option) error {
 
 	group, ctx := errgroup.WithContext(notifyCtx)
 
-	for _, srv := range conf.servers {
+	for _, srv := range conf.services {
 		group.Go(handler(ctx, srv, conf.logInfo, conf.logErr))
 	}
 
@@ -48,18 +48,18 @@ func run(parent context.Context, opts ...Option) error {
 		return err
 	}
 
-	conf.logInfo("goblin has shut down all servers")
+	conf.logInfo("goblin has shut down all services")
 
 	return nil
 }
 
-func handler(ctx context.Context, srv Server, logInfo, logErr LogFunc) func() error {
+func handler(ctx context.Context, srv Service, logInfo, logErr LogFunc) func() error {
 	return func() error {
 		ch := make(chan error, 1)
 		defer close(ch)
 
 		go func() {
-			logInfo("goblin is starting the server", "id", srv.ID())
+			logInfo("goblin is starting the service", "id", srv.ID())
 
 			if err := srv.Serve(); err != nil {
 				ch <- err
@@ -68,15 +68,15 @@ func handler(ctx context.Context, srv Server, logInfo, logErr LogFunc) func() er
 
 		select {
 		case err := <-ch:
-			logErr("goblin couldn't start the server", "id", srv.ID(), "cause", err.Error())
+			logErr("goblin couldn't start the service", "id", srv.ID(), "cause", err.Error())
 			return err
 		case <-ctx.Done():
 			if err := srv.Shutdown(); err != nil {
-				logErr("goblin couldn't shut down the server", "id", srv.ID(), "cause", err.Error())
+				logErr("goblin couldn't shut down the service", "id", srv.ID(), "cause", err.Error())
 				return err
 			}
 
-			logInfo("goblin successfully shut down the server", "id", srv.ID())
+			logInfo("goblin successfully shut down the service", "id", srv.ID())
 		}
 
 		return nil

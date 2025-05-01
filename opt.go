@@ -3,15 +3,15 @@ package goblin
 type LogFunc func(msg string, args ...any)
 
 type Config struct {
-	servers         []Server
+	services        []Service
 	logInfo, logErr LogFunc
 }
 
 type Option func(*Config)
 
-func WithServer(s ...Server) Option {
+func WithService(s ...Service) Option {
 	return func(c *Config) {
-		c.servers = s
+		c.services = s
 	}
 }
 

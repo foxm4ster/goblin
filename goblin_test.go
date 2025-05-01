@@ -89,7 +89,7 @@ func TestGoblin_Run(t *testing.T) {
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
-				if err := goblin.Run(goblin.WithServer(srv)); err != nil {
+				if err := goblin.Run(goblin.WithService(srv)); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
 			},
@@ -130,7 +130,7 @@ func TestGoblin_Run(t *testing.T) {
 
 				if err := goblin.Run(
 					goblin.WithLogFuncs(nil, nil),
-					goblin.WithServer(srv),
+					goblin.WithService(srv),
 				); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
@@ -174,7 +174,7 @@ func TestGoblin_Run(t *testing.T) {
 
 				if err := goblin.Run(
 					goblin.WithLogFuncs(logger.Info, logger.Error),
-					goblin.WithServer(srv),
+					goblin.WithService(srv),
 				); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
@@ -212,7 +212,7 @@ func TestGoblin_Run(t *testing.T) {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 				defer cancel()
 
-				if err := goblin.RunContext(ctx, goblin.WithServer(srv)); err != nil {
+				if err := goblin.RunContext(ctx, goblin.WithService(srv)); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
 			},
@@ -250,7 +250,7 @@ func TestGoblin_Run(t *testing.T) {
 
 				if err := goblin.Run(
 					goblin.WithLogFuncs(logger.Info, logger.Error),
-					goblin.WithServer(srv, srv2),
+					goblin.WithService(srv, srv2),
 				); err == nil {
 					t.Errorf("goblin expected err, got nil")
 					return
@@ -333,7 +333,7 @@ func TestGoblin_Run(t *testing.T) {
 
 				if err := goblin.Run(
 					goblin.WithLogFuncs(logger.Info, logger.Error),
-					goblin.WithServer(srv),
+					goblin.WithService(srv),
 				); err != nil {
 					t.Errorf("goblin awaken: %v", err)
 				}
@@ -397,7 +397,7 @@ func TestGoblin_Run(t *testing.T) {
 
 				err := goblin.Run(
 					goblin.WithLogFuncs(logger.Info, logger.Error),
-					goblin.WithServer(srv),
+					goblin.WithService(srv),
 				)
 				if err == nil {
 					t.Error("goblin aweken expects error got nil")

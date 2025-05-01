@@ -45,7 +45,7 @@ defer cancel()
 
 if err := goblin.RunContext(
 	ctx,
-	goblin.WithLogbook(logger),
+	goblin.WithLogFuncs(logger.Info, logger.Error),
 	goblin.WithService(myService, srv),
 ); err != nil {
     logger.Error("goblin run", "cause", err)

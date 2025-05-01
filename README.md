@@ -1,12 +1,10 @@
-# Goblin is a lightweight, powerful service management tool built for simplicity and efficiency.
+# goblin - service manager
 
 [![GoDoc](https://godoc.org/github.com/foxm4ster/goblin?status.svg)](https://godoc.org/github.com/foxm4ster/goblin)
 [![Go Report Card](https://goreportcard.com/badge/github.com/foxm4ster/goblin)](https://goreportcard.com/report/github.com/foxm4ster/goblin)
 ![License](https://img.shields.io/dub/l/vibe-d.svg)
 
-## How It Works
-
-Goblin manages multiple services and controls their full lifecycle. Each service operates independently, and Goblin ensures reliable orchestration, startup, and shutdown. With structured error handling and clear logging, it provides stability and transparency in managing background services.
+`goblin` is a lightweight, powerful service management tool built for simplicity and efficiency.
 
 ### Service Interface
 

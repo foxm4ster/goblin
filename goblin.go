@@ -12,24 +12,18 @@ import (
 type Service interface {
 	ID() string
 	Serve() error
-	Shutdown() error
+	Shutdown(context.Context) error
 }
 
-func Run(opts ...Option) error {
-	return run(context.Background(), opts...)
+func Run(conf Config, srvs ...Service) error {
+	return run(context.Background(), conf, srvs...)
 }
 
-func RunContext(ctx context.Context, opts ...Option) error {
-	return run(ctx, opts...)
+func RunContext(ctx context.Context, conf Config, srvs ...Service) error {
+	return run(ctx, conf, srvs...)
 }
 
-func run(parent context.Context, opts ...Option) error {
-	conf := &Config{}
-
-	for _, opt := range opts {
-		opt(conf)
-	}
-
+func run(parent context.Context, conf Config, srvs ...Service) error {
 	if conf.logInfo == nil || conf.logErr == nil {
 		conf.logInfo = discard
 		conf.logErr = discard
@@ -40,8 +34,8 @@ func run(parent context.Context, opts ...Option) error {
 
 	group, ctx := errgroup.WithContext(notifyCtx)
 
-	for _, srv := range conf.services {
-		group.Go(handler(ctx, srv, conf.logInfo, conf.logErr))
+	for _, srv := range srvs {
+		group.Go(handler(ctx, conf, srv))
 	}
 
 	if err := group.Wait(); err != nil {
@@ -53,13 +47,13 @@ func run(parent context.Context, opts ...Option) error {
 	return nil
 }
 
-func handler(ctx context.Context, srv Service, logInfo, logErr LogFunc) func() error {
+func handler(ctx context.Context, conf Config, srv Service) func() error {
 	return func() error {
 		ch := make(chan error, 1)
 		defer close(ch)
 
 		go func() {
-			logInfo("goblin is starting the service", "id", srv.ID())
+			conf.logInfo("goblin is starting the service", "id", srv.ID())
 
 			if err := srv.Serve(); err != nil {
 				ch <- err
@@ -68,18 +62,24 @@ func handler(ctx context.Context, srv Service, logInfo, logErr LogFunc) func() e
 
 		select {
 		case err := <-ch:
-			logErr("goblin couldn't start the service", "id", srv.ID(), "cause", err.Error())
+			conf.logErr("goblin couldn't start the service", "id", srv.ID(), "cause", err.Error())
 			return err
 		case <-ctx.Done():
-			if err := srv.Shutdown(); err != nil {
-				logErr("goblin couldn't shut down the service", "id", srv.ID(), "cause", err.Error())
+			sCtx, cancel := context.WithTimeout(context.Background(), conf.shutdownTimeout)
+			defer cancel()
+
+			if conf.shutdownTimeout == 0 {
+				sCtx = context.Background()
+			}
+
+			if err := srv.Shutdown(sCtx); err != nil {
+				conf.logErr("goblin couldn't shut down the service", "id", srv.ID(), "cause", err.Error())
 				return err
 			}
 
-			logInfo("goblin successfully shut down the service", "id", srv.ID())
+			conf.logInfo("goblin successfully shut down the service", "id", srv.ID())
+			return nil
 		}
-
-		return nil
 	}
 }
 

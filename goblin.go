@@ -15,15 +15,21 @@ type Service interface {
 	Shutdown(context.Context) error
 }
 
-func Run(conf Config, srvs ...Service) error {
-	return run(context.Background(), conf, srvs...)
+func Run(opts []Option, srvs ...Service) error {
+	return run(context.Background(), opts, srvs...)
 }
 
-func RunContext(ctx context.Context, conf Config, srvs ...Service) error {
-	return run(ctx, conf, srvs...)
+func RunContext(ctx context.Context, opts []Option, srvs ...Service) error {
+	return run(ctx, opts, srvs...)
 }
 
-func run(parent context.Context, conf Config, srvs ...Service) error {
+func run(parent context.Context, opts []Option, srvs ...Service) error {
+	conf := Config{}
+
+	for _, opt := range opts {
+		opt(&conf)
+	}
+
 	if conf.logInfo == nil || conf.logErr == nil {
 		conf.logInfo = discard
 		conf.logErr = discard

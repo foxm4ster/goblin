@@ -72,9 +72,13 @@ func main() {
 	srv4 := NewServer(":8083", handler, timeout)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
-	conf := goblin.Config{}.WithLogFuncs(logger.Info, logger.Error)
 
-	err := goblin.Run(conf, srv, srv2, srv3, srv4)
+	opts := []goblin.Option{
+		goblin.WithLogFuncs(logger.Info, logger.Error),
+		goblin.WithShutdownTimeout(timeout),
+	}
+
+	err := goblin.Run(opts, srv, srv2, srv3, srv4)
 	if err != nil {
 		logger.Error("goblin run", slog.Any("cause", err))
 		return

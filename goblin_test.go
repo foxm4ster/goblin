@@ -24,9 +24,8 @@ const (
 )
 
 type Server struct {
-	addr    string
-	http    *http.Server
-	timeout time.Duration
+	addr string
+	http *http.Server
 }
 
 func (s Server) ID() string {
@@ -37,10 +36,7 @@ func (s Server) Serve() error {
 	return s.http.ListenAndServe()
 }
 
-func (s Server) Shutdown() error {
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
-	defer cancel()
-
+func (s Server) Shutdown(ctx context.Context) error {
 	return s.http.Shutdown(ctx)
 }
 
@@ -60,8 +56,7 @@ func TestGoblin_Run(t *testing.T) {
 			f: func(t *testing.T) {
 				handler := pingPongHandler{}
 				srv := Server{
-					addr:    addr,
-					timeout: time.Second,
+					addr: addr,
 					http: &http.Server{
 						Addr:    addr,
 						Handler: handler,
@@ -89,8 +84,12 @@ func TestGoblin_Run(t *testing.T) {
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
-				if err := goblin.Run(goblin.WithService(srv)); err != nil {
-					t.Errorf("goblin awaken: %v", err)
+				opts := []goblin.Option{
+					goblin.WithShutdownTimeout(time.Second),
+				}
+
+				if err := goblin.Run(opts, srv); err != nil {
+					t.Errorf("goblin run: %v", err)
 				}
 			},
 		},
@@ -99,8 +98,7 @@ func TestGoblin_Run(t *testing.T) {
 			f: func(t *testing.T) {
 				handler := pingPongHandler{}
 				srv := Server{
-					addr:    addr,
-					timeout: time.Second,
+					addr: addr,
 					http: &http.Server{
 						Addr:    addr,
 						Handler: handler,
@@ -128,11 +126,8 @@ func TestGoblin_Run(t *testing.T) {
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
-				if err := goblin.Run(
-					goblin.WithLogFuncs(nil, nil),
-					goblin.WithService(srv),
-				); err != nil {
-					t.Errorf("goblin awaken: %v", err)
+				if err := goblin.Run(nil, srv); err != nil {
+					t.Errorf("goblin run: %v", err)
 				}
 			},
 		},
@@ -141,8 +136,7 @@ func TestGoblin_Run(t *testing.T) {
 			f: func(t *testing.T) {
 				handler := pingPongHandler{}
 				srv := Server{
-					addr:    addr,
-					timeout: time.Second,
+					addr: addr,
 					http: &http.Server{
 						Addr:    addr,
 						Handler: handler,
@@ -172,11 +166,13 @@ func TestGoblin_Run(t *testing.T) {
 
 				logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
 
-				if err := goblin.Run(
+				opts := []goblin.Option{
 					goblin.WithLogFuncs(logger.Info, logger.Error),
-					goblin.WithService(srv),
-				); err != nil {
-					t.Errorf("goblin awaken: %v", err)
+					goblin.WithShutdownTimeout(time.Second),
+				}
+
+				if err := goblin.Run(opts, srv); err != nil {
+					t.Errorf("goblin run: %v", err)
 				}
 			},
 		},
@@ -185,8 +181,7 @@ func TestGoblin_Run(t *testing.T) {
 			f: func(t *testing.T) {
 				handler := pingPongHandler{}
 				srv := Server{
-					addr:    addr,
-					timeout: time.Second,
+					addr: addr,
 					http: &http.Server{
 						Addr:    addr,
 						Handler: handler,
@@ -212,8 +207,12 @@ func TestGoblin_Run(t *testing.T) {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 				defer cancel()
 
-				if err := goblin.RunContext(ctx, goblin.WithService(srv)); err != nil {
-					t.Errorf("goblin awaken: %v", err)
+				if err := goblin.RunContext(
+					ctx,
+					[]goblin.Option{goblin.WithShutdownTimeout(time.Second)},
+					srv,
+				); err != nil {
+					t.Errorf("goblin run: %v", err)
 				}
 			},
 		},
@@ -226,8 +225,7 @@ func TestGoblin_Run(t *testing.T) {
 
 				handler := pingPongHandler{}
 				srv := Server{
-					addr:    addr,
-					timeout: time.Second,
+					addr: addr,
 					http: &http.Server{
 						Addr:    addr,
 						Handler: handler,
@@ -235,8 +233,7 @@ func TestGoblin_Run(t *testing.T) {
 				}
 
 				srv2 := Server{
-					addr:    addr,
-					timeout: time.Second,
+					addr: addr,
 					http: &http.Server{
 						Addr:    addr,
 						Handler: handler,
@@ -249,8 +246,12 @@ func TestGoblin_Run(t *testing.T) {
 				}()
 
 				if err := goblin.Run(
-					goblin.WithLogFuncs(logger.Info, logger.Error),
-					goblin.WithService(srv, srv2),
+					[]goblin.Option{
+						goblin.WithLogFuncs(logger.Info, logger.Error),
+						goblin.WithShutdownTimeout(time.Second),
+					},
+					srv,
+					srv2,
 				); err == nil {
 					t.Errorf("goblin expected err, got nil")
 					return
@@ -269,8 +270,7 @@ func TestGoblin_Run(t *testing.T) {
 				logger := slog.New(slog.NewJSONHandler(buff, nil))
 
 				srv := Server{
-					addr:    addr,
-					timeout: time.Second * 8,
+					addr: addr,
 					http: &http.Server{
 						Addr: addr,
 						Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -332,10 +332,13 @@ func TestGoblin_Run(t *testing.T) {
 				}()
 
 				if err := goblin.Run(
-					goblin.WithLogFuncs(logger.Info, logger.Error),
-					goblin.WithService(srv),
+					[]goblin.Option{
+						goblin.WithLogFuncs(logger.Info, logger.Error),
+						goblin.WithShutdownTimeout(time.Second * 8),
+					},
+					srv,
 				); err != nil {
-					t.Errorf("goblin awaken: %v", err)
+					t.Errorf("goblin run: %v", err)
 				}
 			},
 		},
@@ -347,8 +350,7 @@ func TestGoblin_Run(t *testing.T) {
 				logger := slog.New(slog.NewJSONHandler(buff, nil))
 
 				srv := Server{
-					addr:    addr,
-					timeout: time.Second,
+					addr: addr,
 					http: &http.Server{
 						Addr: addr,
 						Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -396,11 +398,14 @@ func TestGoblin_Run(t *testing.T) {
 				}()
 
 				err := goblin.Run(
-					goblin.WithLogFuncs(logger.Info, logger.Error),
-					goblin.WithService(srv),
+					[]goblin.Option{
+						goblin.WithLogFuncs(logger.Info, logger.Error),
+						goblin.WithShutdownTimeout(time.Second),
+					},
+					srv,
 				)
 				if err == nil {
-					t.Error("goblin aweken expects error got nil")
+					t.Error("goblin run expects error got nil")
 				}
 
 				if !errors.Is(err, context.DeadlineExceeded) {

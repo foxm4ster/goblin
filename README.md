@@ -14,7 +14,7 @@ In your codebase you just need to implement the `Service` interface to pass it i
 type Service interface {
     ID() string
     Serve() error
-    Shutdown() error
+    Shutdown(ctx context.Context) error
 }
 ```
 
@@ -28,10 +28,12 @@ myService := &MyService{}
 // Define another service
 srv := NewHTTPServer(addr, handler)
 
-if err := goblin.Run(
-	goblin.WithLogFuncs(logger.Info, logger.Error),
-	goblin.WithService(myService, srv),
-); err != nil {
+opts := []goblin.Option{
+    goblin.WithLogFuncs(logger.Info, logger.Error),
+    goblin.WithShutdownTimeout(time.Second * 8),
+}
+
+if err := goblin.Run(opts, myService, srv); err != nil {
     logger.Error("goblin run", "cause", err)
 }
 ```
@@ -43,11 +45,20 @@ Use `RunContext` to run the services with a custom `context.Context`.
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
 
-if err := goblin.RunContext(
-	ctx,
-	goblin.WithLogFuncs(logger.Info, logger.Error),
-	goblin.WithService(myService, srv),
-); err != nil {
+opts := []goblin.Option{
+    goblin.WithLogFuncs(logger.Info, logger.Error),
+    goblin.WithShutdownTimeout(time.Second * 8),
+}
+
+if err := goblin.RunContext(ctx, opts, myService, srv); err != nil {
+    logger.Error("goblin run", "cause", err)
+}
+```
+
+If you don't need logging or any configuration, you can pass nil.
+
+```go
+if err := goblin.Run(nil, myService, srv); err != nil {
     logger.Error("goblin run", "cause", err)
 }
 ```

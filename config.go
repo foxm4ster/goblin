@@ -9,18 +9,21 @@ type Config struct {
 	shutdownTimeout time.Duration
 }
 
-func (c Config) WithLogFuncs(info, err LogFunc) Config {
-	if info == nil || err == nil {
-		return c
+type Option func(*Config)
+
+func WithLogFuncs(info, err LogFunc) Option {
+	return func(c *Config) {
+		if info == nil || err == nil {
+			return
+		}
+
+		c.logInfo = info
+		c.logErr = err
 	}
-
-	c.logInfo = info
-	c.logErr = err
-
-	return c
 }
 
-func (c Config) WithShutdownTimeout(v time.Duration) Config {
-	c.shutdownTimeout = v
-	return c
+func WithShutdownTimeout(v time.Duration) Option {
+	return func(c *Config) {
+		c.shutdownTimeout = v
+	}
 }

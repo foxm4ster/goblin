@@ -38,11 +38,12 @@ func (s Server) Serve() error {
 	return s.server.ListenAndServe()
 }
 
-func (s Server) Shutdown() error {
+func (s Server) Shutdown(parent context.Context) error {
 	if s.timeout <= 0 {
 		s.timeout = time.Second * 3
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
+
+	ctx, cancel := context.WithTimeout(parent, s.timeout)
 	defer cancel()
 
 	time.Sleep(time.Duration(rand.IntN(5)) * time.Second)
@@ -72,10 +73,13 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
 
-	if err := goblin.Run(
+	opts := []goblin.Option{
 		goblin.WithLogFuncs(logger.Info, logger.Error),
-		goblin.WithService(srv, srv2, srv3, srv4),
-	); err != nil {
+		goblin.WithShutdownTimeout(timeout),
+	}
+
+	err := goblin.Run(opts, srv, srv2, srv3, srv4)
+	if err != nil {
 		logger.Error("goblin run", slog.Any("cause", err))
 		return
 	}

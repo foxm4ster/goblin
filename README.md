@@ -63,6 +63,21 @@ if err := goblin.Run(nil, myService, srv); err != nil {
 }
 ```
 
+---
+
+If you prefer a builder style, you can do it using `With`.
+
+```go
+
+if err := goblin.With(
+    goblin.WithLogFuncs(logger.Info, logger.Error),
+    goblin.WithShutdownTimeout(time.Second * 8),
+).RunContext(ctx, myService, srv); err != nil {
+    logger.Error("goblin run", "cause", err)
+}
+
+```
+
 ### License
 
 Licensed under the MIT License. See [LICENSE](./LICENSE) for more.

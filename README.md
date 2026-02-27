@@ -39,12 +39,9 @@ When implementing the `Service` interface, you must honor a critical contract:
   }
   ```
 
-### Logging behavior (important)
+### Logging behavior
 
-By default, Goblin logs simple text messages to stdout.
-
-- It writes basic logs to stdout/stderr for service lifecycle events.
-- To customize logging (e.g., disable logs or use JSON format), pass a logger instance via `goblin.WithLogger(logger)`.
+By default, Goblin logs simple text messages. To customize logging (e.g., disable logs or use JSON format), pass a logger instance via `goblin.WithLogger(logger)`.
 
 ### Example Usage
 

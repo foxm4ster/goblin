@@ -73,12 +73,9 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
 
-	opts := []goblin.Option{
-		goblin.WithLogFuncs(logger.Info, logger.Error),
+	err := goblin.With(
 		goblin.WithShutdownTimeout(timeout),
-	}
-
-	err := goblin.Run(opts, srv, srv2, srv3, srv4)
+	).Run(srv, srv2, srv3, srv4)
 	if err != nil {
 		logger.Error("goblin run", slog.Any("cause", err))
 		return

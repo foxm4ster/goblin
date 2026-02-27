@@ -1,6 +1,6 @@
 
 test:
-	go test -coverprofile=coverage.out ./...
+	go test -race -coverprofile=coverage.out ./...
 
-cover:
+cover: test
 	go tool cover -html=coverage.out

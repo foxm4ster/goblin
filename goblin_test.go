@@ -71,8 +71,11 @@ func TestGoblin_Run(t *testing.T) {
 
 					data, err := io.ReadAll(res.Body)
 					if err != nil {
+						res.Body.Close()
 						t.Errorf("failed to parse reposne: %v", err)
 					}
+
+					res.Body.Close()
 
 					if string(data) != keyWord {
 						t.Errorf("unexpected key word: got %v", string(data))
@@ -80,15 +83,15 @@ func TestGoblin_Run(t *testing.T) {
 				}()
 
 				go func() {
-					time.Sleep(1 * time.Second)
+					time.Sleep(10 * time.Millisecond)
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
 				opts := []goblin.Option{
-					goblin.WithShutdownTimeout(time.Second),
+					goblin.WithShutdownTimeout(50 * time.Millisecond),
 				}
 
-				if err := goblin.Run(opts, srv); err != nil {
+				if err := goblin.With(opts...).Run(srv); err != nil {
 					t.Errorf("goblin run: %v", err)
 				}
 			},
@@ -113,8 +116,11 @@ func TestGoblin_Run(t *testing.T) {
 
 					data, err := io.ReadAll(res.Body)
 					if err != nil {
+						res.Body.Close()
 						t.Errorf("failed to parse reposne: %v", err)
 					}
+
+					res.Body.Close()
 
 					if string(data) != keyWord {
 						t.Errorf("unexpected key word: got %v", string(data))
@@ -122,11 +128,11 @@ func TestGoblin_Run(t *testing.T) {
 				}()
 
 				go func() {
-					time.Sleep(1 * time.Second)
+					time.Sleep(10 * time.Millisecond)
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
-				if err := goblin.Run(nil, srv); err != nil {
+				if err := goblin.Run(srv); err != nil {
 					t.Errorf("goblin run: %v", err)
 				}
 			},
@@ -160,18 +166,18 @@ func TestGoblin_Run(t *testing.T) {
 				}()
 
 				go func() {
-					time.Sleep(1 * time.Second)
+					time.Sleep(10 * time.Millisecond)
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
 				logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
 
 				opts := []goblin.Option{
-					goblin.WithLogFuncs(logger.Info, logger.Error),
-					goblin.WithShutdownTimeout(time.Second),
+					goblin.WithLogger(logger),
+					goblin.WithShutdownTimeout(50 * time.Millisecond),
 				}
 
-				if err := goblin.Run(opts, srv); err != nil {
+				if err := goblin.With(opts...).Run(srv); err != nil {
 					t.Errorf("goblin run: %v", err)
 				}
 			},
@@ -204,14 +210,12 @@ func TestGoblin_Run(t *testing.T) {
 					}
 				}()
 
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 				defer cancel()
 
-				if err := goblin.RunContext(
-					ctx,
-					[]goblin.Option{goblin.WithShutdownTimeout(time.Second)},
-					srv,
-				); err != nil {
+				if err := goblin.With(
+					goblin.WithShutdownTimeout(50*time.Millisecond),
+				).RunContext(ctx, srv); err != nil {
 					t.Errorf("goblin run: %v", err)
 				}
 			},
@@ -241,18 +245,14 @@ func TestGoblin_Run(t *testing.T) {
 				}
 
 				go func() {
-					time.Sleep(1 * time.Second)
+					time.Sleep(10 * time.Millisecond)
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 				}()
 
-				if err := goblin.Run(
-					[]goblin.Option{
-						goblin.WithLogFuncs(logger.Info, logger.Error),
-						goblin.WithShutdownTimeout(time.Second),
-					},
-					srv,
-					srv2,
-				); err == nil {
+				if err := goblin.With(
+					goblin.WithLogger(logger),
+					goblin.WithShutdownTimeout(50*time.Millisecond),
+				).Run(srv, srv2); err == nil {
 					t.Errorf("goblin expected err, got nil")
 					return
 				}
@@ -274,13 +274,13 @@ func TestGoblin_Run(t *testing.T) {
 					http: &http.Server{
 						Addr: addr,
 						Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-							time.Sleep(2 * time.Second)
+							time.Sleep(50 * time.Millisecond)
 							_, _ = fmt.Fprintf(w, keyWord)
 						}),
-						ReadTimeout:       time.Second * 10,
-						ReadHeaderTimeout: time.Second * 10,
-						WriteTimeout:      time.Second * 10,
-						IdleTimeout:       time.Second * 10,
+						ReadTimeout:       200 * time.Millisecond,
+						ReadHeaderTimeout: 200 * time.Millisecond,
+						WriteTimeout:      200 * time.Millisecond,
+						IdleTimeout:       200 * time.Millisecond,
 					},
 				}
 
@@ -322,7 +322,7 @@ func TestGoblin_Run(t *testing.T) {
 
 				go func() {
 					<-second
-					time.Sleep(1 * time.Second)
+					time.Sleep(10 * time.Millisecond)
 					_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 					third <- struct{}{}
 				}()
@@ -331,13 +331,10 @@ func TestGoblin_Run(t *testing.T) {
 					first <- struct{}{}
 				}()
 
-				if err := goblin.Run(
-					[]goblin.Option{
-						goblin.WithLogFuncs(logger.Info, logger.Error),
-						goblin.WithShutdownTimeout(time.Second * 8),
-					},
-					srv,
-				); err != nil {
+				if err := goblin.With(
+					goblin.WithLogger(logger),
+					goblin.WithShutdownTimeout(100*time.Millisecond),
+				).Run(srv); err != nil {
 					t.Errorf("goblin run: %v", err)
 				}
 			},
@@ -397,13 +394,10 @@ func TestGoblin_Run(t *testing.T) {
 					first <- struct{}{}
 				}()
 
-				err := goblin.Run(
-					[]goblin.Option{
-						goblin.WithLogFuncs(logger.Info, logger.Error),
-						goblin.WithShutdownTimeout(time.Second),
-					},
-					srv,
-				)
+				err := goblin.With(
+					goblin.WithLogger(logger),
+					goblin.WithShutdownTimeout(time.Second),
+				).Run(srv)
 				if err == nil {
 					t.Error("goblin run expects error got nil")
 				}

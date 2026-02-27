@@ -18,65 +18,79 @@ type Service interface {
 }
 ```
 
+### Implementation Contract
+
+When implementing the `Service` interface, you must honor a critical contract:
+
+- **`Shutdown()` is a promise**: When your `Shutdown(ctx)` method returns (with or without error), it must guarantee that `Serve()` will exit shortly after. Goblin waits for the `Serve()` goroutine to complete after calling `Shutdown()`. If `Serve()` does not return, the entire shutdown process will hang indefinitely.
+
+- **Example of correct implementation** (HTTP server):
+  ```go
+  func (s *MyServer) Shutdown(ctx context.Context) error {
+      return s.httpServer.Shutdown(ctx)  // Guaranteed to stop Serve()
+  }
+  ```
+
+- **Example of incorrect implementation** (will hang):
+  ```go
+  func (s *MyServer) Shutdown(ctx context.Context) error {
+      s.logger.Info("shutting down")
+      return nil  // Returns immediately but Serve() is still running!
+  }
+  ```
+
+### Logging behavior (important)
+
+By default, Goblin logs simple text messages to stdout.
+
+- It writes basic logs to stdout/stderr for service lifecycle events.
+- To customize logging (e.g., disable logs or use JSON format), pass a logger instance via `goblin.WithLogger(logger)`.
+
 ### Example Usage
 
 ```go
-
-// Define a service
+// Simple usage with defaults
 myService := &MyService{}
-
-// Define another service
 srv := NewHTTPServer(addr, handler)
 
-opts := []goblin.Option{
-    goblin.WithLogFuncs(logger.Info, logger.Error),
-    goblin.WithShutdownTimeout(time.Second * 8),
-}
-
-if err := goblin.Run(opts, myService, srv); err != nil {
-    logger.Error("goblin run", "cause", err)
+if err := goblin.Run(myService, srv); err != nil {
+    // handle error
 }
 ```
 
 Use `RunContext` to run the services with a custom `context.Context`.
 
 ```go
-
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
 
-opts := []goblin.Option{
-    goblin.WithLogFuncs(logger.Info, logger.Error),
-    goblin.WithShutdownTimeout(time.Second * 8),
-}
-
-if err := goblin.RunContext(ctx, opts, myService, srv); err != nil {
-    logger.Error("goblin run", "cause", err)
+if err := goblin.RunContext(ctx, myService, srv); err != nil {
+    // handle error
 }
 ```
 
-If you don't need logging or any configuration, you can pass nil.
+For configuration, use the `With` builder pattern:
 
 ```go
-if err := goblin.Run(nil, myService, srv); err != nil {
-    logger.Error("goblin run", "cause", err)
-}
-```
-
-If you prefer a builder style, you can do it using `With`.
-
-```go
+logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 if err := goblin.With(
-    goblin.WithLogFuncs(logger.Info, logger.Error),
+    goblin.WithLogger(logger),
     goblin.WithShutdownTimeout(time.Second * 8),
-).RunContext(ctx,
-	myService,
-	srv,
-); err != nil {
+).Run(myService, srv); err != nil {
     logger.Error("goblin run", "cause", err)
 }
+```
 
+Or with custom context:
+
+```go
+if err := goblin.With(
+    goblin.WithLogger(logger),
+    goblin.WithShutdownTimeout(time.Second * 8),
+).RunContext(ctx, myService, srv); err != nil {
+    logger.Error("goblin run", "cause", err)
+}
 ```
 
 ### License
